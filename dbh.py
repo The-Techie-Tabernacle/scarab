@@ -23,6 +23,17 @@ class dbh:
         self.worker_thread = threading.Thread(target=self.worker)
         self.worker_thread.start()
 
+    async def initialize(self):
+        with open("schema.sql") as f:
+            try:
+                t = threading.Thread(target=self.db.executescript, args=(f.read(),))
+                t.start()
+                while t.is_alive():
+                    await asyncio.sleep(0.1)  # nonblocking sleep until the thread is done
+            except Exception as e:
+                return 1
+        return 0
+
     def worker(self):
         """
         Long-running worker thread that handles database operations.
