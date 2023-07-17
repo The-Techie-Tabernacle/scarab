@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from .dbh import dbh
 import os
 import logging
 import aiohttp
@@ -18,6 +19,7 @@ class main_class(commands.Bot):
         logging.basicConfig(level=logging.INFO)
         intents = discord.Intents.all()
         super().__init__(command_prefix=".", intents=intents)
+        self.database = dbh()
 
         # HTTP interactions are performed by the brainstem
         #self.session = aiohttp.ClientSession(
@@ -30,7 +32,7 @@ class main_class(commands.Bot):
     # Load all cogs in the cogs folder and starts the "timely" loop(yoinked from Aav <3)
     async def setup_hook(self):
         # NOT COGS - DO NOT TRY TO LOAD
-        blacklist = ["backbrain.py","nationstates.py","RegionBlock.py","RegionClass.py"]
+        blacklist = ["backbrain.py", "nationstates.py", "RegionBlock.py", "RegionClass.py", "dbh.py"]
 
         for filename in os.listdir("cogs"):
             if os.path.isfile(os.path.join("cogs", filename)):
@@ -41,6 +43,8 @@ class main_class(commands.Bot):
                 except Exception as e:
                     print(f"Failed to load cog {filename}")
                     print(e)
+
+        await self.database.initialize()
 
         # Migrated to setup_hook from on_ready because on_ready is best left not used after d.py 2.0
         print("Ready to Rock and Roll!")
