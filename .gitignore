@@ -9,3 +9,8 @@ scarab.sln
 __ARCHIVE__.zip
 __pycache__
 solar.py
+bin/
+lib/
+include/
+lib64
+pyvenv.cfg
