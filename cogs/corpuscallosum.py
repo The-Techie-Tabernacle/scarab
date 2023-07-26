@@ -4,6 +4,7 @@ from discord.ext import tasks, commands
 from queue import Queue
 from backbrain import BackBrain, codes
 import datetime
+import re
 
 async def MakeEmbed(title:str, prompt: str, color=0x8ee6dd):
     embed = discord.Embed(
@@ -29,6 +30,29 @@ class CorpusCallosum(commands.Cog):
         self.backbrain = BackBrain(self.headers, self.commands, self.responses) # Backbrain autostarts on invokation
         self.brainstem.start()
 
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        # Don't infinitely loop, please
+        if message.author.bot: 
+            return
+
+        # https://(www.)?nationstates.net/[nation=][A-Za-z0-9-_]+?
+        nationRegex = "https://(www.)?nationstates.net/(nation=)?[A-Za-z0-9-_]+"
+        nationLink = re.compile(nationRegex)
+        pointNation = nationLink.search(message.content)
+        if pointNation:
+            point = pointNation.group(0)
+            # Send that we wish to submit a point, what the point is, and the message that sent it
+            # This is so we can smite bad or late points (Not in WA, not in JP, we already have a point)
+            checkPoint = (
+                codes.commands.POINT,
+                point, 
+                message.id
+            ) 
+
+            self.commands.put(checkPoint)
+            
+
 #    @commands.Cog.listener()
     async def cog_unload(self):
         print("Unloading Corpus Callosum")
@@ -45,7 +69,7 @@ class CorpusCallosum(commands.Cog):
     async def flatline(self):
         print("Shutting down Backbrain")
         self.commands.put((codes.commands.EXIT,)) # Task the backbrain to shut down
-        #self.brainstem.cancel() # Terminate brainstem loop
+        self.brainstem.cancel() # Terminate brainstem loop
         
     @tasks.loop(seconds=0.01) # No idea if it will accept values < 1, but 1 second is too much variability for our needs. 
     async def brainstem(self): #So named because it's the bridge between the brain and the rest of the world
@@ -81,6 +105,19 @@ class CorpusCallosum(commands.Cog):
                     f"Now move, sucka (move!)\nNow move, sucka (move!)",
                     color=0xE9D502
                 ))
+
+            elif task[0] == codes.responses.DELETE:
+                messageID = task[1]
+                message = await self.channel.fetch_message(messageID)
+                await message.delete()
+
+            elif task[0] == codes.responses.SETPOINT:
+                await self.channel.send(f"{self.tagrole.mention} POINT:", embed = await MakeEmbed(
+                    "POINT",
+                    f"{task[1]}\n" * 5,
+                    color=0xb2ffff
+                ))
+
 
             self.responses.task_done()
 

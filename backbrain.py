@@ -62,6 +62,7 @@ class codes:
         UPDATERS = 27 # Inform the CC how many updaters we have. Endos is this -1
         ROLLCALLED = 29 # Inform the CC of what our roll call is
         VERIFICATION = 31 # Inform whether or not a verification for the nation named succeeded
+        DELETE = 33 # Delete a given message. Used to erase duplicate or invalid points. 
 
 # I may or may not have stolen this name from the Scythe triology. Fight me. 
 # Supply a command queue and a response queue
@@ -163,6 +164,16 @@ class BackBrain(Thread): #Inherit multithreading
 
                 elif command[0] == codes.commands.MANUALGO:
                     self.responses.put((codes.responses.GO,))
+
+                elif command[0] == codes.commands.POINT: 
+                    # If we have a point, smite the late one
+                    if self.point: 
+                        self.responses.put((codes.responses.DELETE, command[2]))
+                    else:
+                        # TODO: Verify point!
+                        self.point = command[1]
+                        self.responses.put((codes.responses.SETPOINT, command[1]))
+
 
                 # TODO: Impliment each and every command code, one by one. 
                 # This will be painful.
