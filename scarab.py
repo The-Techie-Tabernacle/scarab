@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from .dbh import dbh
+from dbh import dbh
 import os
 import logging
 import aiohttp
