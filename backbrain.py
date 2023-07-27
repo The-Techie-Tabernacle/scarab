@@ -64,13 +64,19 @@ class codes:
         VERIFICATION = 31 # Inform whether or not a verification for the nation named succeeded
         DELETE = 33 # Delete a given message. Used to erase duplicate or invalid points. 
 
+class states:
+    # Out of update:
+    IDLE = 0 # Default state - nothing happening
+    BOOT = 1 # Initial state - start boot
+
+    NO_POINT = 2 # During update, no point
+    TRACK_POINT = 3 # During update, tracking point
+    TRACK_TRIG = 4 # During update, tracking trigger
+    TRACK_TARG = 5 # During update, tracking target
+
 # I may or may not have stolen this name from the Scythe triology. Fight me. 
 # Supply a command queue and a response queue
 class BackBrain(Thread): #Inherit multithreading
-    class states:
-        IDLE = 0 # Default state - nothing happening
-        BOOT = 1 # Initial state - start boot
-
     def __init__(self,headers,commands,responses,regionBlock=None,fetchRegions=False):
         Thread.__init__(self)
 
@@ -81,22 +87,17 @@ class BackBrain(Thread): #Inherit multithreading
         self.commands = commands #Inbound commands from frontend 
         self.responses = responses #Outbound responses to frontend
 
-        self.state = None # Current state - e.g. tracking a target for updating
+        self.state = states.BOOT # Current state - e.g. tracking a target for updating
         self.command = None # Currently handled command, or None/idle if none
 
-        # Update status
-#        if fetchRegions:
-#            nationstates.downloadRegions()
-#        if not regionBlock:
-#            self.regionBlock = RegionBlock() # This should be passed to us on bot start, but we can refresh it as needed
-#        else:
-#            self.regionBlock = regionBlock # Accept custom regionlist
         self.regionBlock = regionBlock
 
         self.regionsAge = datetime.datetime.now().timestamp() # Timestamp of the last time the regionlist was refreshed
         self.position = 0 # Last known position of update within the list
 
         # Targeting info
+        self.tagging = False
+        self.jumppoint = "suspicious" # TODO: Allow changing this dynamically!
         self.updaters = 0 # Updaters available. Endos is this number -1 (we need a point)
         self.tracked = None # Currently tracked trigger (REGION CLASS)
         self.target = None # Currently selected target (REGION CLASS)
@@ -115,20 +116,23 @@ class BackBrain(Thread): #Inherit multithreading
                 return False
 
     def boot(self):
+        print("Initializing boot procedure")
         pass
 
     def idle(self):
         pass 
 
     def run(self):
-#        self.responses.put((codes.responses.STATUS,"Backbrain up and running"))
+#        self.responses.put((codes.responses.STATUS,Backbrain up and running"))
 
         while True:
+            # Tracking inbounds...
             if self.commands.empty():
-                if self.state == None or self.state == "idle":
+                if self.state == None or self.state == states.IDLE:
                     self.idle() # Wait for news, in the meantime, tend to our local database
-                elif self.state == "boot":
+                elif self.state == states.BOOT:
                     self.boot()
+                    self.state = states.IDLE
 
             else: #Override comes in from high command
                 command = self.commands.get()
@@ -165,14 +169,49 @@ class BackBrain(Thread): #Inherit multithreading
                 elif command[0] == codes.commands.MANUALGO:
                     self.responses.put((codes.responses.GO,))
 
+                elif command[0] == codes.commands.BEGINTAG:
+                    if not self.tagging:
+                        self.tagging = True
+                        self.responses.put((codes.responses.STATUS, "Tag raid started!"))
+                    else:
+                        self.responses.put((codes.responses.STATUS, "Tag raid already in progress."))
+
+                elif command[0] == codes.commands.ENDTAG:
+                    if self.tagging:
+                        self.tagging = False
+                        self.point = None
+                        self.responses.put((codes.responses.STATUS, "Tag raid finished."))
+                    else:
+                        self.responses.put((codes.responses.STATUS, "No tag raid in progress."))
+
                 elif command[0] == codes.commands.POINT: 
                     # If we have a point, smite the late one
-                    if self.point: 
+                    if not self.tagging == True:
+                        self.responses.put((codes.responses.DELETE, command[2]))
+                        self.responses.put((codes.responses.STATUS, "We are not tagging :c\nType .start_tag to start a raid."))
+
+                    elif self.point: 
                         self.responses.put((codes.responses.DELETE, command[2]))
                     else:
                         # TODO: Verify point!
-                        self.point = command[1]
-                        self.responses.put((codes.responses.SETPOINT, command[1]))
+                        point = command[1]
+
+                        if "=" in point: 
+                            nation = point.split("=")[-1]
+                        else:
+                            nation = point.split("/")[-1] 
+
+                        status = nationstates.ping_point(nation,self.jumppoint)
+
+                        if status == 1:
+                            self.responses.put((codes.responses.SETPOINT, nation))
+                            self.point = nation
+                        else:
+                            self.responses.put((codes.responses.DELETE, command[2]))
+                            if status == -1:
+                                self.responses.put((codes.responses.STATUS, "Not in WA!"))
+                            elif status == -2:
+                                self.responses.put((codes.responses.STATUS, "Not in JP!"))
 
 
                 # TODO: Impliment each and every command code, one by one. 

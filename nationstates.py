@@ -86,3 +86,17 @@ def verify_nation(nation,code,headers=headers):
         return True
     else:
         return False
+
+def ping_point(point, jp="suspicious"):
+    # view-source:https://www.nationstates.net/cgi-bin/api.cgi?nation=Volstrostia&q=region+wa
+    r = perform_request(f"https://www.nationstates.net/cgi-bin/api.cgi?nation={nsify(point)}&q=region+wa")
+    content = ET.fromstring(r.text)
+    region = content.findtext("REGION")
+    membership = content.findtext("UNSTATUS")
+    if membership == "Non-member":
+        return -1
+    
+    if nsify(region) != nsify(jp):
+        return -2
+
+    return 1

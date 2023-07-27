@@ -35,6 +35,9 @@ class CorpusCallosum(commands.Cog):
         # Don't infinitely loop, please
         if message.author.bot: 
             return
+        
+        if message.content.startswith(".verify "):
+            return
 
         # https://(www.)?nationstates.net/[nation=][A-Za-z0-9-_]+?
         nationRegex = "https://(www.)?nationstates.net/(nation=)?[A-Za-z0-9-_]+"
@@ -111,10 +114,13 @@ class CorpusCallosum(commands.Cog):
                 message = await self.channel.fetch_message(messageID)
                 await message.delete()
 
+            elif task[0] == codes.responses.STATUS:
+                await self.channel.send(task[1])
+
             elif task[0] == codes.responses.SETPOINT:
                 await self.channel.send(f"{self.tagrole.mention} POINT:", embed = await MakeEmbed(
                     "POINT",
-                    f"{task[1]}\n" * 5,
+                    f"https://www.nationstates.net/nation={task[1]}\n" * 5,
                     color=0xb2ffff
                 ))
 
@@ -155,6 +161,14 @@ class CorpusCallosum(commands.Cog):
 #            await ctx.send(embed=await MakeEmbed("UNROLED",f"Unroled: {ctx.message.author}"))
             self.commands.put((codes.commands.GONEUPDATER, ctx.message.author)) # Send a new updater along
 
+    @commands.command(aliases=["tag","start_raid"])
+    async def start_tag(self, ctx):
+        self.commands.put((codes.commands.BEGINTAG,))
+
+    @commands.command(aliases=["end_raid","stop_raid","stop_tag"])
+    async def end_tag(self, ctx):
+        self.commands.put((codes.commands.ENDTAG,))
+    
 
 async def setup(bot):
     await bot.add_cog(CorpusCallosum(bot))
