@@ -1,8 +1,13 @@
+import asyncio
+
 import aiohttp
 import discord
 from discord.ext import tasks, commands
 import os
 import gzip
+
+import aiofiles
+
 
 class dump(commands.Cog):
     def __init__(self, bot):
@@ -27,21 +32,27 @@ class dump(commands.Cog):
                 ) as dumpfile:
                     print("regions.xml.gz downloaded!")
                     print(f"Status: {dumpfile.status}")
-                    with open("regions.xml.gz", "wb") as df:
+                    async with aiofiles.open("regions.xml.gz", "wb") as df:
                         async for chunk in dumpfile.content.iter_chunked(1024 * 1024):
-                            df.write(chunk)
+                            await df.write(chunk)
                     try:
                         print("Extracting regions.xml.gz")
-                        with gzip.open("regions.xml.gz", "rb") as f:
-                            with open("regions.xml", "wb") as df:
-                                df.write(f.read())
+
+                        def unzip_dump():
+                            with gzip.open("regions.xml.gz", "rb") as f:
+                                return f.read()
+
+                        loop = asyncio.get_running_loop()
+                        unzipped = await loop.run_in_executor(None, unzip_dump)
+                        async with aiofiles.open("regions.xml", "wb") as df:
+                            await df.write(unzipped)
                         print("regions.xml extracted!")
                     except Exception as e:
                         print(f"Error (gzip): {e}")
         except Exception as e:
             print(f"Error (aiohttp): {e}")
 
-    @commands.command(aliases=["Dump"])
+    @commands.command(aliases=["dump"])
     @discord.app_commands.checks.has_any_role(
         "command"
     )  # Needs Update Command Role!

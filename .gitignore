@@ -6,6 +6,7 @@ regions.xml.gz
 scarab.pyproj
 scarab.pyproj.user
 scarab.sln
+scarab.db
 __ARCHIVE__.zip
 __pycache__
 solar.py
@@ -16,3 +17,4 @@ lib64
 pyvenv.cfg
 pyproject.toml
 poetry.lock
+/.idea/
