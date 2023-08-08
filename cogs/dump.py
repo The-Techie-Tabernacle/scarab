@@ -12,8 +12,11 @@ class dump(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @tasks.loop(hours=24, reconnect=True)
-    async def dump(self):
+    @commands.command()
+    @discord.app_commands.checks.has_any_role(
+        "command"
+    )  # Needs Update Command Role!
+    async def dump(self, ctx):
         print('Removing old files...')
         today = date.today().strftime('%m.%d.%Y')
         for file in glob('data.*.db'):
@@ -31,15 +34,8 @@ class dump(commands.Cog):
         if stderr:
             print(stderr.decode(), file=sys.stderr)
         print('Database generated!')
+        await ctx.reply(f'Successfully generated database for {today}!')
 
-    @commands.command(aliases=["dump"])
-    @discord.app_commands.checks.has_any_role(
-        "command"
-    )  # Needs Update Command Role!
-    async def start_dump(self, ctx):
-        self.dump.start()  # This simply starts the above "dump" loop - which runs once a day to maintain
-        # a XML file of the newest daily dump! (Could also set it to be done at a certain time each day if needed,
-        # unsure if required atm though)
 
 '''
     @commands.command()

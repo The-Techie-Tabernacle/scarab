@@ -1,4 +1,5 @@
 import requests
+import time
 from defusedxml import ElementTree as ET
 from RegionClass import Region
 from RegionBlock import RegionBlock

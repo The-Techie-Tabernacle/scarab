@@ -5,6 +5,8 @@ import os
 import logging
 import aiohttp
 
+from cogs.chooser import chooser
+
 
 class main_class(commands.Bot):
     def __init__(self):
@@ -32,7 +34,7 @@ class main_class(commands.Bot):
     # Load all cogs in the cogs folder and starts the "timely" loop(yoinked from Aav <3)
     async def setup_hook(self):
         # NOT COGS - DO NOT TRY TO LOAD
-        blacklist = ["backbrain.py", "nationstates.py", "RegionBlock.py", "RegionClass.py", "dbh.py"]
+        blacklist = ["backbrain.py", "nationstates.py", "RegionBlock.py", "RegionClass.py", "dbh.py", "chooser.py"]
 
         for filename in os.listdir("cogs"):
             if os.path.isfile(os.path.join("cogs", filename)):
@@ -43,6 +45,9 @@ class main_class(commands.Bot):
                 except Exception as e:
                     print(f"Failed to load cog {filename}")
                     print(e)
+
+        await self.add_cog(chooser(self))  # for some reason loading this one as an extension causes the imports to lag
+        print("Loaded: chooser.py")
 
         await self.database.initialize()
 
