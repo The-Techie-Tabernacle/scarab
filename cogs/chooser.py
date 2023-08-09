@@ -7,10 +7,9 @@ import discord
 from discord.ext import tasks, commands
 
 
-class Region:
-    def __init__(self, name: str, last_update_time: time):
-        self.name = name
-        self.last_update_time = last_update_time
+class Region(NamedTuple):
+    name: str
+    last_update_time: time
 
 
 class TrigAndTargs(NamedTuple):
