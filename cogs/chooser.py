@@ -4,7 +4,7 @@ from typing import List, NamedTuple, Tuple, Union
 
 import aiosqlite
 import discord
-from discord.ext import tasks, commands
+from discord.ext import commands
 
 
 class Region(NamedTuple):
@@ -39,7 +39,18 @@ class chooser(commands.Cog):
             raise FileNotFoundError('No current DB dump detected')
         return aiosqlite.connect(db_file)
 
-    async def first_region(self, is_minor: bool = False):
+    async def first_region(self, is_minor: bool = False) -> Region:
+        """Gets the first updating region on the site.
+
+        Args:
+            is_minor: A bool representing whether or not to get the minor update time. Defaults to False.
+
+        Returns:
+            A Region NamedTuple corresponding to the first updating region.
+
+        Raises:
+            FileNotFoundError: If a current dump is not found.
+        """
         async with self._connect_db() as db:
             db: aiosqlite.Connection
             db.row_factory = aiosqlite.Row
@@ -53,7 +64,18 @@ class chooser(commands.Cog):
                 row = await cursor.fetchone()
                 return Region(row['Name'], datetime.fromtimestamp(row[f'Last{"Minor" if is_minor else "Major"}Update']).time())
 
-    async def last_region(self, is_minor: bool = False):
+    async def last_region(self, is_minor: bool = False) -> Region:
+        """Gets the last updating region on the site.
+
+        Args:
+            is_minor: A bool representing whether or not to get the minor update time. Defaults to False.
+
+        Returns:
+            A Region NamedTuple corresponding to the last updating region.
+
+        Raises:
+            FileNotFoundError: If a current dump is not found.
+        """
         async with self._connect_db() as db:
             db: aiosqlite.Connection
             db.row_factory = aiosqlite.Row
@@ -69,6 +91,18 @@ class chooser(commands.Cog):
                 return Region(row['Name'], datetime.fromtimestamp(row[f'Last{"Minor" if is_minor else "Major"}Update']).time())
 
     async def select_trigger(self, region: Union[str | int], trigger_time: int = 4, is_minor: bool = False) -> Region:
+        """Selects a trigger for the region.
+
+        select_trigger's trigger is the best available one equal to or longer than the provided trigger_time.
+
+        Args:
+            region: The region to select a trigger for. Can be either the name of the region or the ID in update order.
+            trigger_time: The lowest time desired for the trigger. Defaults to 4.
+            is_minor: Whether or not to select triggers for minor. Defaults to False.
+
+        Returns:
+            A Region NamedTuple corresponding to the best available trigger.
+        """
         async with self._connect_db() as db:
             db: aiosqlite.Connection
             db.row_factory = aiosqlite.Row
@@ -101,6 +135,20 @@ class chooser(commands.Cog):
                              count: int = 1,
                              trigger_time: int = 4,
                              switch_time: int = 30) -> TrigAndTargs:
+        """Selects a target or multiple raidable targets along with a trigger.
+
+        Args:
+            is_minor: Whether or not to select targets and a trigger for minor. Defaults to False.
+            after_region: The region to scan for targets after. Defaults to the first updating region.
+            count: How many targets to pull. Defaults to 1.
+            trigger_time: The lowest time desired for the trigger. Defaults to 4.
+            switch_time: The minimum time desired between the region provided and the first target. Defaults to 30.
+
+        Returns:
+            A TrigAndTargs NamedTuple representing the trigger and a list of targets. The trigger is a Region NamedTuple, and
+            The targets are given in a tuple consisting of a Region and an int representing the update time in seconds after
+            the first region.
+        """
         if isinstance(after_region, str) and after_region.isdigit():
             after_region = int(after_region)
 
