@@ -3,8 +3,6 @@ import os
 from typing import List, NamedTuple, Tuple, Union
 
 import aiosqlite
-import discord
-from discord.ext import commands
 
 
 class Region(NamedTuple):
@@ -22,7 +20,7 @@ def to_region_url(region: str):
     return 'https://nationstates.net/region=' + region.replace(' ', '_').lower()
 
 
-class chooser(commands.Cog):
+class chooser:
     def __init__(self, bot):
         self.bot = bot
         self.headers = {"User-Agent": "SCARAB Accessing NSAPI for regional data, devved by nation=hesskin_empire"}
@@ -195,32 +193,3 @@ class chooser(commands.Cog):
                         datetime.combine(date.today(), datetime.fromtimestamp(first_target_update).time()))
 
         return TrigAndTargs(trigger, int(trigger_time.total_seconds()), targets)
-
-    @commands.command(aliases=["choose_targets"])
-    @discord.app_commands.checks.has_role("command")
-    async def get_targets(self,
-                          ctx,
-                          is_minor: bool = False,
-                          after_region: Union[str | int] = 1,
-                          count: int = 1,
-                          trigger_time: int = 4,
-                          switch_time: int = 30):
-        try:
-            trigger, trigger_time, targets = await self.select_targets(is_minor, after_region, count, trigger_time, switch_time)
-        except FileNotFoundError:
-            embed = discord.Embed(title='No Current Dump Found',
-                                  description='Please dump a more recent dump with `.dump`.',
-                                  color=0xd90202)
-            return await ctx.reply(embed=embed)
-
-        message = f'Trigger ({trigger_time}s): {trigger.name} ({trigger.last_update_time.strftime("%H:%M:%S")})'
-        for target in targets:
-            message += f'\n{to_region_url(target[0].name)}'
-            if target[1] != 0:
-                message += f' (+{target[1]}s)'
-
-        await ctx.reply(message)
-
-
-async def setup(bot):
-    await bot.add_cog(chooser(bot))
