@@ -1,65 +1,40 @@
 import asyncio
+from datetime import date
+from glob import glob
+import sys
+import os
 
-import aiohttp
 import discord
 from discord.ext import tasks, commands
-import os
-import gzip
-
-import aiofiles
 
 
 class dump(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @tasks.loop(hours=24, reconnect=True)
-    async def dump(self):
-        print(f"Starting Process. . .")
-        if os.path.exists("regions.xml"):
-            print("regions.xml exists, deleting.")
-            os.remove("regions.xml")
-            print("regions.xml deleted.")
-        else:
-            print("Downloading Dump")
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(
-                    "https://www.nationstates.net/pages/regions.xml.gz",
-                    headers={
-                        "User-Agent": f"SCARAB accession for regional daily dump, devved by nation=ghazi-rhaman_ammar"
-                    },
-                ) as dumpfile:
-                    print("regions.xml.gz downloaded!")
-                    print(f"Status: {dumpfile.status}")
-                    async with aiofiles.open("regions.xml.gz", "wb") as df:
-                        async for chunk in dumpfile.content.iter_chunked(1024 * 1024):
-                            await df.write(chunk)
-                    try:
-                        print("Extracting regions.xml.gz")
-
-                        def unzip_dump():
-                            with gzip.open("regions.xml.gz", "rb") as f:
-                                return f.read()
-
-                        loop = asyncio.get_running_loop()
-                        unzipped = await loop.run_in_executor(None, unzip_dump)
-                        async with aiofiles.open("regions.xml", "wb") as df:
-                            await df.write(unzipped)
-                        print("regions.xml extracted!")
-                    except Exception as e:
-                        print(f"Error (gzip): {e}")
-        except Exception as e:
-            print(f"Error (aiohttp): {e}")
-
-    @commands.command(aliases=["dump"])
+    @commands.command()
     @discord.app_commands.checks.has_any_role(
         "command"
     )  # Needs Update Command Role!
-    async def start_dump(self, ctx):
-        self.dump.start()  # This simply starts the above "dump" loop - which runs once a day to maintain
-        # a XML file of the newest daily dump! (Could also set it to be done at a certain time each day if needed,
-        # unsure if required atm though)
+    async def dump(self, ctx):
+        print('Removing old files...')
+        today = date.today().strftime('%m.%d.%Y')
+        for file in glob('data.*.db'):
+            if today not in file:
+                os.remove(file)
+        for file in glob('regions.*.xml.gz'):
+            if today not in file:
+                os.remove(file)
+        print('Generating daily V20XX database...')
+        executable = './V20XX.exe' if os.name == 'nt' else './V20XX'
+        process = await asyncio.create_subprocess_exec(executable, '-n', 'scarabbot')
+        stdout, stderr = await process.communicate()
+        if stdout:
+            print(stdout.decode())
+        if stderr:
+            print(stderr.decode(), file=sys.stderr)
+        print('Database generated!')
+        await ctx.reply(f'Successfully generated database for {today}!')
 
 
 '''

@@ -1,8 +1,6 @@
 token.txt
 __ARCHIVE__/
 .vs/
-regions.xml
-regions.xml.gz
 scarab.pyproj
 scarab.pyproj.user
 scarab.sln
@@ -18,3 +16,5 @@ pyvenv.cfg
 pyproject.toml
 poetry.lock
 /.idea/
+data.*.db
+regions.*xml*
