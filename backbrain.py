@@ -96,12 +96,14 @@ class BackBrain(Thread): #Inherit multithreading
         self.position = 0 # Last known position of update within the list
 
         # Targeting info
+        self.triggerlen = 3 # Trig-Targ length. Starts at 3, adjusted on the fly. 
         self.tagging = False
         self.jumppoint = "suspicious" # TODO: Allow changing this dynamically!
         self.updaters = 0 # Updaters available. Endos is this number -1 (we need a point)
         self.tracked = None # Currently tracked trigger (REGION CLASS)
         self.target = None # Currently selected target (REGION CLASS)
         self.point = None # Designated point
+        self.lastUpdated = "banana" # Last region we know updated
 
         self.firstUpd = -1 # First updating region
         self.lastUpd = -1 # Last updating region. If < firstUpd, then update in prog
@@ -129,11 +131,62 @@ class BackBrain(Thread): #Inherit multithreading
 #        self.responses.put((codes.responses.STATUS,Backbrain up and running"))
 
         while True:
+            override = False # Skip other crap
             # Tracking inbounds...
-            if self.state == states.TRACK_TRIG:
-                # Poll trigger region repeatedly
 
-            elif self.commands.empty():
+            if self.tagging == True:
+                # No point 
+                if not self.point:
+                    # No point running tracking
+
+                # TODO: Allow skip if tagging stops.
+                while True:
+                    # if endos on self.point >= 1
+                    break
+
+                # We are now primed to tag
+
+                # No target, select one using lastupdated and trigger_len
+                elif not self.target: 
+                    # Lockout all discord commands
+
+                    override = True
+
+                    # Get me a target
+
+                elif not self.trigger:
+                    # Lockout all discord commands
+
+                    override = True
+
+                    # Get me a trigger for self.target
+
+                # We have everything we need to run the tag
+                else:
+                    override = True
+
+                    # Poll trigger
+                    while True:
+                        # if updated:
+                        break
+
+                    # Send GO here
+
+                    # Poll target
+                    while True:
+                        # if updated:
+                        break
+                    
+                    # Used for target selection
+                    self.lastupdated = self.target
+                    
+                    # if self.point in del or RO slots, keep len same
+                    # elif del unchanged, miss
+                    #   self.triggerlen -= 1
+                    # elif del changed != point, 
+                    #   self.triggerlen += 1
+
+            if not override and self.commands.empty():
                 if self.state == None or self.state == states.IDLE:
                     self.idle() # Wait for news, in the meantime, tend to our local database
                 elif self.state == states.BOOT:

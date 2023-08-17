@@ -18,7 +18,7 @@ headers = {
     "User-Agent":f"Scarab/0.1, Developed by Hesskin Empire and Volstrostia",
 }
 
-def perform_request(url,headers=headers,data=None):
+def perform_request(url,headers=headers,data=None, override_ratelimit=False):
     # From https://www.nationstates.net/pages/api.html#ratelimits, retrieved on 13 April 2023
     #    RateLimit-Limit: Set to "50"; which means that there are a total of 50 requests available in the current time window. Use instead of hardcoding.
     #    RateLimit-Remaining: How many more requests can be made within the current time window.
@@ -43,6 +43,7 @@ def perform_request(url,headers=headers,data=None):
         return r # In case we need to extract other data
 
     elif r.status_code == 429: #Too many requests!
+        print("Hit ratelimit")
         if "Retry-After" in r.headers:
             time.sleep(int(r.headers['Retry-After']) + 0.5) #Extra half a second to ensure we don't hit against the wall
         else:
