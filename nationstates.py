@@ -100,3 +100,6 @@ def ping_point(point, jp="suspicious"):
         return -2
 
     return 1
+
+def track_region(region):
+    pass

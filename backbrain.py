@@ -103,12 +103,15 @@ class BackBrain(Thread): #Inherit multithreading
         self.target = None # Currently selected target (REGION CLASS)
         self.point = None # Designated point
 
+        self.firstUpd = -1 # First updating region
+        self.lastUpd = -1 # Last updating region. If < firstUpd, then update in prog
+
         self.start()
 
     def detectUpdate(self):
         if self.regions:
-            firstUpd = nationstates.get_update(regions[0])
-            lastUpd = nationstates.get_update(regions[1])
+            firstUpd = nationstates.track_region(regions[0])
+            lastUpd = nationstates.track_region(regions[1])
 
             if int(lastUpd) < int(firstUpd): #If firstUpd is larger than lastUpd, update has hit First update but not Last update - only ever happens during update
                 return True
@@ -127,7 +130,10 @@ class BackBrain(Thread): #Inherit multithreading
 
         while True:
             # Tracking inbounds...
-            if self.commands.empty():
+            if self.state == states.TRACK_TRIG:
+                # Poll trigger region repeatedly
+
+            elif self.commands.empty():
                 if self.state == None or self.state == states.IDLE:
                     self.idle() # Wait for news, in the meantime, tend to our local database
                 elif self.state == states.BOOT:
