@@ -14,7 +14,7 @@ class dbh:
     """
 
     def __init__(self):
-        self.db = sqlite3.connect('scarab.db')
+        self.db = sqlite3.connect('scarab.db', check_same_thread=False)
         self.db.row_factory = sqlite3.Row
         self.insert_queue = Queue()  # Queue of transactions to be inserted into the database (table, data, transaction_id)
         self.read_queue = Queue()  # Queue of transactions to be read from the database (table, keys, transaction_id)
